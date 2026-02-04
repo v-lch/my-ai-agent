@@ -16,7 +16,7 @@ export default function Home() {
             rel="noopener noreferrer"
           >
             By{' '}
-            <span className="group-hover:underline">Vercel</span>
+            <span className="group-hover:underline">Vercel23:43</span>
           </a>
         </div>
       </div>
