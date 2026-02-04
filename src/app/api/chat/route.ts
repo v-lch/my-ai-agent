@@ -30,32 +30,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Sending request to OpenAI...');
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a helpful assistant.',
-        },
-        {
-          role: 'user',
-          content: message,
-        },
-      ],
-      temperature: 0.7,
-    });
-
-    // 打印OpenAI响应
-    console.log('OpenAI response:', {
-      model: response.model,
-      usage: response.usage,
-      reply: response.choices[0].message.content,
-    });
-
     return NextResponse.json({
-      reply: response.choices[0].message.content,
+      reply: message,
     });
+
+    // console.log('Sending request to OpenAI...');
+    // const response = await openai.chat.completions.create({
+    //   model: 'gpt-3.5-turbo',
+    //   messages: [
+    //     {
+    //       role: 'system',
+    //       content: 'You are a helpful assistant.',
+    //     },
+    //     {
+    //       role: 'user',
+    //       content: message,
+    //     },
+    //   ],
+    //   temperature: 0.7,
+    // });
+
+    // // 打印OpenAI响应
+    // console.log('OpenAI response:', {
+    //   model: response.model,
+    //   usage: response.usage,
+    //   reply: response.choices[0].message.content,
+    // });
+
+    // return NextResponse.json({
+    //   reply: response.choices[0].message.content,
+    // });
   } catch (error) {
     console.error('Error:', error);
     
