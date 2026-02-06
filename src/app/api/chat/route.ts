@@ -17,15 +17,15 @@ console.log('Base URL:', openai.baseURL);
 
 export async function POST(request: NextRequest) {
   try {
-    const { message } = await request.json();
+    const { messages } = await request.json();
 
     // 打印接收到的请求消息
-    console.log('Received request:', { message });
+    console.log('Received request:', { messages });
 
-    if (!message) {
-      console.log('Error: Message is required');
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      console.log('Error: Messages array is required');
       return NextResponse.json(
-        { error: 'Message is required' },
+        { error: 'Messages array is required' },
         { status: 400 }
       );
     }
@@ -42,10 +42,7 @@ export async function POST(request: NextRequest) {
           role: 'system',
           content: 'You are a helpful assistant.',
         },
-        {
-          role: 'user',
-          content: message,
-        },
+        ...messages,
       ],
       temperature: 0.7,
     });
