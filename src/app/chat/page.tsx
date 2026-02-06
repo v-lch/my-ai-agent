@@ -139,6 +139,129 @@ const styles = `
     height: calc(100vh - 240px);
   }
   
+  /* 自定义滚动条样式 */
+  .messages-container::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .messages-container::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+  }
+  
+  .messages-container::-webkit-scrollbar-thumb {
+    background: rgba(193, 193, 193, 0.5);
+    border-radius: 4px;
+  }
+  
+  .messages-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(161, 161, 161, 0.7);
+  }
+  
+  /* 历史消息记录控件样式 */
+  .history-sidebar {
+    position: fixed;
+    right: -320px;
+    top: 0;
+    width: 300px;
+    height: 100vh;
+    background-color: #fff;
+    border-left: 1px solid #eaeaea;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    transition: right 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .history-sidebar.open {
+    right: 0;
+  }
+  
+  .history-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eaeaea;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .history-title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  
+  .history-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .history-close:hover {
+    background-color: #f3f4f6;
+  }
+  
+  .history-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  
+  .history-item {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .history-item:hover {
+    background-color: #f9fafb;
+  }
+  
+  .history-item-content {
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .history-toggle {
+    position: fixed;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #fff;
+    border: 1px solid #eaeaea;
+    border-radius: 8px 0 0 8px;
+    padding: 8px 4px;
+    cursor: pointer;
+    box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .history-toggle-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: #9ca3af;
+  }
+  
+  .history-toggle:hover .history-toggle-dot {
+    background-color: #6b7280;
+  }
+  
   .welcome-screen {
     display: flex;
     flex-direction: column;
@@ -390,6 +513,8 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<{id: string, content: string}[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const styleRef = useRef<HTMLStyleElement | null>(null);
 
@@ -470,6 +595,12 @@ export default function ChatPage() {
       };
 
       setMessages(prev => [...prev, newAssistantMessage]);
+
+      // 将用户消息添加到历史记录
+      setHistory(prev => [
+        { id: Date.now().toString(), content: userMessage },
+        ...prev
+      ]);
     } catch (err) {
       console.error('Error sending message:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
@@ -487,155 +618,190 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="chat-container">
-      {/* 顶部导航 */}
-      <header className="chat-header">
-        <div className="chat-header-content">
-          <div className="chat-header-left">
-            <div className="ai-icon">AI</div>
-            <div className="nav-buttons">
-              <button className="nav-button active">New Chat</button>
-              <button className="nav-button">History</button>
-            </div>
-          </div>
-          <div className="chat-header-right">
-            <button className="settings-button">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-              </svg>
-            </button>
-            <div className="user-avatar">You</div>
-          </div>
-        </div>
-      </header>
-
-      {/* 主内容区域 */}
-      <main className="chat-main">
-        {/* 消息列表 - 占据剩余空间 */}
-        <div className="messages-container">
-          {messages.length === 0 ? (
-            <div className="welcome-screen">
-              <h2 className="welcome-title">AI Chat Assistant</h2>
-              <p className="welcome-subtitle">Start a conversation with the AI assistant. Ask any question or just say hello.</p>
-              <div className="quick-start-buttons">
-                <button className="quick-start-button">
-                  <div className="quick-start-title">What is AI?</div>
-                  <div className="quick-start-description">Learn about artificial intelligence</div>
-                </button>
-                <button className="quick-start-button">
-                  <div className="quick-start-title">Help with coding</div>
-                  <div className="quick-start-description">Get assistance with programming</div>
-                </button>
-                <button className="quick-start-button">
-                  <div className="quick-start-title">Write an email</div>
-                  <div className="quick-start-description">Draft a professional email</div>
-                </button>
-                <button className="quick-start-button">
-                  <div className="quick-start-title">General knowledge</div>
-                  <div className="quick-start-description">Ask about any topic</div>
-                </button>
+    <>
+      <div className="chat-container">
+        {/* 顶部导航 */}
+        <header className="chat-header">
+          <div className="chat-header-content">
+            <div className="chat-header-left">
+              <div className="ai-icon">AI</div>
+              <div className="nav-buttons">
+                <button className="nav-button active">New Chat</button>
+                <button className="nav-button">History</button>
               </div>
             </div>
-          ) : (
-            <div className="messages-list">
-              {messages.map((message) => (
-                <div key={message.id} className={`message ${message.role}`}>
-                  {message.role === 'assistant' && (
-                    <div className="ai-icon">AI</div>
-                  )}
-                  <div className="message-content">
-                    <div className="message-bubble">
-                      <div>{message.content}</div>
-                    </div>
-                    <div className="message-time">
-                      {message.timestamp.toLocaleTimeString()}
-                    </div>
-                  </div>
-                  {message.role === 'user' && (
-                    <div className="user-avatar">You</div>
-                  )}
-                </div>
-              ))}
-              
-              {/* 加载指示器 */}
-              {loading && (
-                <div className="loading-indicator">
-                  <div className="loading-dot"></div>
-                  <div className="loading-dot"></div>
-                  <div className="loading-dot"></div>
-                  <span>Generating response...</span>
-                </div>
-              )}
-              
-              {/* 错误提示 */}
-              {error && (
-                <div className="error-message">
-                  <div>{error}</div>
-                  <button 
-                    onClick={() => setError(null)}
-                    className="error-dismiss"
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              )}
-              
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-        </div>
-
-        {/* 输入区域 - 固定在底部 */}
-        <div className="chat-input-area">
-          <div className="chat-input-content">
-            <div className="input-toolbar">
-              <button className="toolbar-button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                  <path d="M12 17h.01"></path>
+            <div className="chat-header-right">
+              <button className="settings-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
-                Deep Thinking
               </button>
-              <button className="toolbar-button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                </svg>
-                Web Search
-              </button>
-            </div>
-            <div className="input-container">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your message here..."
-                className="input-textarea"
-                disabled={loading}
-              />
-              <button
-                onClick={handleSend}
-                disabled={!input.trim() || loading}
-                className="send-button"
-              >
-                {loading ? (
-                  <div className="loading-dot"></div>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                  </svg>
-                )}
-              </button>
-            </div>
-            <div className="input-footer">
-              Content generated by AI, please verify carefully
+              <div className="user-avatar">You</div>
             </div>
           </div>
+        </header>
+
+        {/* 主内容区域 */}
+        <main className="chat-main">
+          {/* 消息列表 - 占据剩余空间 */}
+          <div className="messages-container">
+            {messages.length === 0 ? (
+              <div className="welcome-screen">
+                <h2 className="welcome-title">AI Chat Assistant</h2>
+                <p className="welcome-subtitle">Start a conversation with the AI assistant. Ask any question or just say hello.</p>
+                <div className="quick-start-buttons">
+                  <button className="quick-start-button">
+                    <div className="quick-start-title">What is AI?</div>
+                    <div className="quick-start-description">Learn about artificial intelligence</div>
+                  </button>
+                  <button className="quick-start-button">
+                    <div className="quick-start-title">Help with coding</div>
+                    <div className="quick-start-description">Get assistance with programming</div>
+                  </button>
+                  <button className="quick-start-button">
+                    <div className="quick-start-title">Write an email</div>
+                    <div className="quick-start-description">Draft a professional email</div>
+                  </button>
+                  <button className="quick-start-button">
+                    <div className="quick-start-title">General knowledge</div>
+                    <div className="quick-start-description">Ask about any topic</div>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="messages-list">
+                {messages.map((message) => (
+                  <div key={message.id} className={`message ${message.role}`}>
+                    {message.role === 'assistant' && (
+                      <div className="ai-icon">AI</div>
+                    )}
+                    <div className="message-content">
+                      <div className="message-bubble">
+                        <div>{message.content}</div>
+                      </div>
+                      <div className="message-time">
+                        {message.timestamp.toLocaleTimeString()}
+                      </div>
+                    </div>
+                    {message.role === 'user' && (
+                      <div className="user-avatar">You</div>
+                    )}
+                  </div>
+                ))}
+                
+                {/* 加载指示器 */}
+                {loading && (
+                  <div className="loading-indicator">
+                    <div className="loading-dot"></div>
+                    <div className="loading-dot"></div>
+                    <div className="loading-dot"></div>
+                    <span>Generating response...</span>
+                  </div>
+                )}
+                
+                {/* 错误提示 */}
+                {error && (
+                  <div className="error-message">
+                    <div>{error}</div>
+                    <button 
+                      onClick={() => setError(null)}
+                      className="error-dismiss"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+                
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+
+          {/* 输入区域 - 固定在底部 */}
+          <div className="chat-input-area">
+            <div className="chat-input-content">
+              <div className="input-toolbar">
+                <button className="toolbar-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <path d="M12 17h.01"></path>
+                  </svg>
+                  Deep Thinking
+                </button>
+                <button className="toolbar-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                  </svg>
+                  Web Search
+                </button>
+              </div>
+              <div className="input-container">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your message here..."
+                  className="input-textarea"
+                  disabled={loading}
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim() || loading}
+                  className="send-button"
+                >
+                  {loading ? (
+                    <div className="loading-dot"></div>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                  )}
+                </button>
+              </div>
+              <div className="input-footer">
+                Content generated by AI, please verify carefully
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      {/* 历史消息记录控件 */}
+      <div className={`history-sidebar ${showHistory ? 'open' : ''}`}>
+        <div className="history-header">
+          <div className="history-title">历史消息</div>
+          <button className="history-close" onClick={() => setShowHistory(false)}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
-      </main>
-    </div>
+        <div className="history-list">
+          {history.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#9ca3af', padding: '24px' }}>
+              暂无历史消息
+            </div>
+          ) : (
+            history.map((item) => (
+              <div key={item.id} className="history-item">
+                <div className="history-item-content">{item.content}</div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* 历史消息切换按钮 */}
+      <div className="history-toggle" onClick={() => setShowHistory(!showHistory)}>
+        <div className="history-toggle-dot"></div>
+        <div className="history-toggle-dot"></div>
+        <div className="history-toggle-dot"></div>
+      </div>
+    </>
   );
 }
